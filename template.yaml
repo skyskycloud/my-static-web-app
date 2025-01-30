@@ -30,8 +30,11 @@ Resources:
             Resource: "arn:aws:s3:::my-static-web-app-new/*"
             Condition:
               Bool:
-                aws:SecureTransport: "false"
+                aws:SecureTransport: "true"  # ✅ Require HTTPS access
 
+  # 🎯 S3 Bucket for CodePipeline Artifacts
+  CodePipelineArtifactBucket:
+    Type: AWS::S3::Bucket
 
   # 🎯 IAM Role for CodeBuild
   CodeBuildServiceRole:
@@ -54,7 +57,7 @@ Resources:
                 Action:
                   - "s3:PutObject"
                   - "s3:PutObjectAcl"
-                Resource: arn:aws:s3:::my-static-web-app-new
+                Resource: "arn:aws:s3:::my-static-web-app-new/*"
 
   # 🛠 CodeBuild Project
   CodeBuildProject:
@@ -89,7 +92,7 @@ Resources:
       RoleArn: !GetAtt CodeBuildServiceRole.Arn
       ArtifactStore:
         Type: S3
-        Location: my-static-web-app-new
+        Location: !Ref CodePipelineArtifactBucket  # ✅ Use a separate artifact bucket
       Stages:
         - Name: Source
           Actions:
@@ -103,7 +106,7 @@ Resources:
                 Owner: "skyskycloud"
                 Repo: "my-static-web-app"
                 Branch: "main"
-                OAuthToken: "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"
+                # OAuthToken: "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"  ❌ REMOVE
               OutputArtifacts:
                 - Name: SourceArtifact
         - Name: Deploy
