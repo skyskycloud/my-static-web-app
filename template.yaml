@@ -12,7 +12,7 @@ Resources:
         IndexDocument: index.html
       OwnershipControls:
         Rules:
-          - ObjectOwnership: BucketOwnerEnforced
+          - ObjectOwnership: BucketOwnerEnforced  # Ensures the bucket owner controls all objects
 
   # ✅ S3 Bucket Policy for Public Access
   StaticWebsiteBucketPolicy:
