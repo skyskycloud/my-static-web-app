@@ -1,0 +1,121 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+Description: "Deploy static website from GitHub to S3"
+
+Resources:
+  # 🚀 S3 Bucket for Hosting Web App
+  StaticWebsiteBucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      BucketName: my-static-web-app-new
+      WebsiteConfiguration:
+        IndexDocument: index.html
+      PublicAccessBlockConfiguration:
+        BlockPublicAcls: false
+        BlockPublicPolicy: false
+        IgnorePublicAcls: false
+        RestrictPublicBuckets: false
+      AccessControl: PublicRead
+
+  # ✅ S3 Bucket Policy for Public Access
+  StaticWebsiteBucketPolicy:
+    Type: AWS::S3::BucketPolicy
+    Properties:
+      Bucket: my-static-web-app-new
+      PolicyDocument:
+        Statement:
+          - Effect: Allow
+            Principal: "*"
+            Action: "s3:GetObject"
+            Resource: arn:aws:s3:::my-static-web-app-new
+
+  # 🎯 IAM Role for CodeBuild
+  CodeBuildServiceRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service:
+                - codebuild.amazonaws.com
+            Action: "sts:AssumeRole"
+      Policies:
+        - PolicyName: S3DeployPolicy
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Effect: Allow
+                Action:
+                  - "s3:PutObject"
+                  - "s3:PutObjectAcl"
+                Resource: arn:aws:s3:::my-static-web-app-new
+
+  # 🛠 CodeBuild Project
+  CodeBuildProject:
+    Type: AWS::CodeBuild::Project
+    Properties:
+      Name: WebAppBuild
+      Source:
+        Type: GITHUB
+        Location: "https://github.com/skyskycloud/my-static-web-app.git"
+      Environment:
+        ComputeType: BUILD_GENERAL1_SMALL
+        Image: "aws/codebuild/standard:5.0"
+        Type: LINUX_CONTAINER
+      ServiceRole: !GetAtt CodeBuildServiceRole.Arn
+      Artifacts:
+        Type: NO_ARTIFACTS
+      BuildSpec: |
+        version: 0.2
+        phases:
+          build:
+            commands:
+              - echo "Deploying website to S3..."
+              - aws s3 cp . s3://my-static-web-app-new/ --recursive
+        env:
+          variables:
+            S3_BUCKET_NAME: my-static-web-app-new
+
+  # 🚀 CodePipeline for Automated Deployment
+  CodePipeline:
+    Type: AWS::CodePipeline::Pipeline
+    Properties:
+      RoleArn: !GetAtt CodeBuildServiceRole.Arn
+      ArtifactStore:
+        Type: S3
+        Location: my-static-web-app-new
+      Stages:
+        - Name: Source
+          Actions:
+            - Name: GitHubSource
+              ActionTypeId:
+                Category: Source
+                Owner: ThirdParty
+                Provider: GitHub
+                Version: "1"
+              Configuration:
+                Owner: "skyskycloud"
+                Repo: "my-static-web-app"
+                Branch: "main"
+                OAuthToken: "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"
+              OutputArtifacts:
+                - Name: SourceArtifact
+        - Name: Deploy
+          Actions:
+            - Name: DeployToS3
+              ActionTypeId:
+                Category: Build
+                Owner: AWS
+                Provider: CodeBuild
+                Version: "1"
+              InputArtifacts:
+                - Name: SourceArtifact
+              Configuration:
+                ProjectName: !Ref CodeBuildProject
+
+Outputs:
+  WebsiteURL:
+    Description: "URL for the hosted website"
+    Value: !GetAtt StaticWebsiteBucket.WebsiteURL
