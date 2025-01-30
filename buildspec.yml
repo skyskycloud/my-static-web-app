@@ -1,9 +1,0 @@
-version: 0.2
-phases:
-  build:
-    commands:
-      - echo "Deploying website to S3..."
-      - aws s3 cp . s3://my-static-web-app-new/ --recursive
-env:
-  variables:
-    S3_BUCKET_NAME: my-static-web-app-new
