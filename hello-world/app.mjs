@@ -1,24 +1,25 @@
-/**
- *
- * Event doc: https://docs.aws.amazon.com/apigateway/latest/developerguide/set-up-lambda-proxy-integrations.html#api-gateway-simple-proxy-for-lambda-input-format
- * @param {Object} event - API Gateway Lambda Proxy Input Format
- *
- * Context doc: https://docs.aws.amazon.com/lambda/latest/dg/nodejs-prog-model-context.html 
- * @param {Object} context
- *
- * Return doc: https://docs.aws.amazon.com/apigateway/latest/developerguide/set-up-lambda-proxy-integrations.html
- * @returns {Object} object - API Gateway Lambda Proxy Output Format
- * 
- */
-
 export const lambdaHandler = async (event, context) => {
-    const response = {
-      statusCode: 200,
-      body: JSON.stringify({
-        message: 'hello world',
-      })
-    };
+    const htmlContent = `
+        <!DOCTYPE html>
+        <html lang="en">
+        <head>
+            <meta charset="UTF-8">
+            <meta name="viewport" content="width=device-width, initial-scale=1.0">
+            <title>My AWS Web App</title>
+            <link rel="stylesheet" href="styles.css">
+        </head>
+        <body>
+            <h1>Welcome to My AWS Hosted Web App 🚀</h1>
+            <p>This website is automatically deployed from GitHub using AWS CodePipeline.</p>
+        </body>
+        </html>
+    `;
 
-    return response;
-  };
-  
+    return {
+        statusCode: 200,
+        headers: {
+            "Content-Type": "text/html"
+        },
+        body: htmlContent
+    };
+};
